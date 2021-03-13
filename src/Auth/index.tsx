@@ -1,63 +1,33 @@
 import React, { useContext, useState } from 'react';
-import Axios from 'axios';
+import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { Result, failure, success } from '../utils/Result';
 import appConfig from '../config/app-config';
 import { GENERIC_ERROR_MESSAGE } from '../config/constants';
-
-export type LoginResult = Result<boolean, Error>;
-
-export interface IAuthResponse {
-  user: {
-    isPhoneVerified: boolean;
-    isEmailVerified: boolean;
-    accounts: unknown[];
-    consoles: unknown[];
-    phoneNumber: string;
-    userId: string;
-    id: string;
-  };
-  tokens: {
-    access: {
-      token: string;
-    };
-    refresh: {
-      token: string;
-    };
-  };
-}
-
-export interface IUserInfo {
-  id: string;
-  userId: string;
-  phoneNumber: string;
-  isEmailVerified: boolean;
-  isPhoneVerified: boolean;
-  tokens: {
-    access: string;
-    refresh: string;
-  };
-}
+import { IAuthResponse, IAuthTokens, IAuthUserInfo } from '../interfaces';
+import { LoginResult } from '../types';
 
 export interface IAuth {
-  user: IUserInfo | null;
+  user: IAuthUserInfo | null;
   authenticate: (phoneNumber: string, otp: string) => Promise<LoginResult>;
-  setSession: (userInfo: IUserInfo | null) => void;
+  setSession: (userInfo: IAuthUserInfo | null) => void;
   sendOTP: (phoneNumber: string) => Promise<Result<string, Error>>;
+  updateTokens: (tokens: IAuthTokens) => void;
   logout: () => void;
 }
 
 const AuthContext = React.createContext<IAuth | null>(null);
 
 function useAuthProvider(): IAuth {
-  const [user, setUser] = useState<IUserInfo | null>(null);
+  const [user, setUser] = useState<IAuthUserInfo | null>(null);
 
   async function authenticate(
     phoneNumber: string,
     otp: string,
   ): Promise<LoginResult> {
     try {
-      const response = await Axios.post<IAuthResponse>(
+      const response = await axios.post<IAuthResponse>(
         `${appConfig.baseServerUri}/auth/phone/verify`,
         { phoneNumber, code: otp },
       );
@@ -65,11 +35,16 @@ function useAuthProvider(): IAuth {
       if (response.data) {
         const { user: usr, tokens } = response.data;
         const data = {
-          id: usr.id,
           userId: usr.userId,
+          accounts: usr.accounts,
+          consoles: usr.consoles,
           phoneNumber: usr.phoneNumber,
           isEmailVerified: usr.isEmailVerified,
           isPhoneVerified: usr.isPhoneVerified,
+          isProfileComplete: usr.isProfileComplete,
+          username: usr.username,
+          email: usr.email,
+          name: usr.name,
           tokens: {
             access: tokens.access.token,
             refresh: tokens.refresh.token,
@@ -84,13 +59,19 @@ function useAuthProvider(): IAuth {
 
       return failure(new Error(GENERIC_ERROR_MESSAGE));
     } catch (error) {
-      return failure(new Error(error?.response?.data || GENERIC_ERROR_MESSAGE));
+      if (error.response) {
+        return failure(new Error(error.response.data || GENERIC_ERROR_MESSAGE));
+      }
+      if (error.request) {
+        return failure(new Error(error.request || GENERIC_ERROR_MESSAGE));
+      }
+      return failure(new Error(error.message || GENERIC_ERROR_MESSAGE));
     }
   }
 
   async function sendOTP(phoneNumber: string): Promise<Result<string, Error>> {
     try {
-      const response = await Axios.post<string>(
+      const response = await axios.post<string>(
         `${appConfig.baseServerUri}/auth/phone`,
         {
           phoneNumber,
@@ -103,16 +84,34 @@ function useAuthProvider(): IAuth {
 
       return failure(new Error(GENERIC_ERROR_MESSAGE));
     } catch (error) {
-      return failure(new Error(error?.response?.data || GENERIC_ERROR_MESSAGE));
+      if (error.response) {
+        return failure(new Error(error.response.data || GENERIC_ERROR_MESSAGE));
+      }
+      if (error.request) {
+        return failure(new Error(error.request || GENERIC_ERROR_MESSAGE));
+      }
+      return failure(new Error(error.message || GENERIC_ERROR_MESSAGE));
     }
   }
 
-  function setSession(userInfo: IUserInfo | null) {
+  function setSession(userInfo: IAuthUserInfo | null) {
     setUser(userInfo);
+  }
+
+  function updateTokens(tokens: IAuthTokens) {
+    if (!user || !tokens) return;
+
+    const updatedUserInfo: IAuthUserInfo = {
+      ...user,
+      tokens,
+    };
+
+    setSession(updatedUserInfo);
   }
 
   function logout() {
     setUser(null);
+    AsyncStorage.removeItem('userInfo');
   }
 
   return {
@@ -120,6 +119,7 @@ function useAuthProvider(): IAuth {
     authenticate,
     sendOTP,
     setSession,
+    updateTokens,
     logout,
   };
 }

@@ -11,7 +11,7 @@ export interface ISignUpScreenProps {
   navigation: StackNavigationProp<SignedOutStackParamList, 'SignIn'>;
 }
 
-function SignUpScreen({ navigation }: ISignUpScreenProps): JSX.Element {
+const SignUpScreen: React.FC<ISignUpScreenProps> = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isSendingOTP, setIsSendingOTP] = useState(false);
   const auth = useAuth();
@@ -62,7 +62,7 @@ function SignUpScreen({ navigation }: ISignUpScreenProps): JSX.Element {
       </Button>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {},

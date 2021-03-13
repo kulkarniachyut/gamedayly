@@ -25,7 +25,10 @@ export default function App(): JSX.Element {
                 }
               />
             ) : (
-              <Navigation isSignedIn={auth.user !== null} />
+              <Navigation
+                isSignedIn={auth.user !== null}
+                isProfileComplete={auth.user?.isProfileComplete || false}
+              />
             )
           }
         </AuthProvider>

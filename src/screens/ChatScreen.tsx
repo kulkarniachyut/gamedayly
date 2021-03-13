@@ -4,22 +4,22 @@ import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 // import { useAuth } from '../Auth';
-import { HomeStackParamList } from '../types';
+import { ChatStackParamList } from '../types';
 
-export interface IHomeScreenProps {
-  route: RouteProp<HomeStackParamList, 'Home'>;
-  navigation: StackNavigationProp<HomeStackParamList, 'Home'>;
+export interface IChatScreenProps {
+  route: RouteProp<ChatStackParamList, 'Chat'>;
+  navigation: StackNavigationProp<ChatStackParamList, 'Chat'>;
 }
 
-const HomeScreen: React.FC<IHomeScreenProps> = (): JSX.Element | null => {
+const ChatScreen: React.FC<IChatScreenProps> = (): JSX.Element | null => {
   // const auth = useAuth();
   // const user = auth?.user;
 
   return (
     <View>
-      <Text>Home</Text>
+      <Text>Chat</Text>
     </View>
   );
 };
 
-export default HomeScreen;
+export default ChatScreen;

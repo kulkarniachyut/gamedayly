@@ -1,20 +1,22 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { IUserInfo, useAuth } from '../Auth';
+
+import { useAuth } from '../Auth';
+import { IAuthUserInfo } from '../interfaces';
 
 export interface ISplashScreenProps {
   onTokenRestoreComplete: () => void;
 }
 
-function SplashScreen({
+const SplashScreen: React.FC<ISplashScreenProps> = ({
   onTokenRestoreComplete,
-}: ISplashScreenProps): JSX.Element {
+}) => {
   const auth = useAuth();
 
   React.useEffect(() => {
     const bootstrapAsync = async () => {
-      let userInfo: IUserInfo | null = null;
+      let userInfo: IAuthUserInfo | null = null;
 
       try {
         const info = await AsyncStorage.getItem('userInfo');
@@ -40,7 +42,7 @@ function SplashScreen({
       <ActivityIndicator size="large" color="blue" />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

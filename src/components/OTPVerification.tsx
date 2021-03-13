@@ -8,30 +8,36 @@ export interface IOTPVerificationProps {
   onSubmit: (otp: string) => void;
   onResendPress: () => Promise<boolean>;
   phoneNumber: string;
+  isVerificationInProgress: boolean;
+  isResendingOTP: boolean;
 }
 
 function OTPVerification({
   onSubmit,
   onResendPress,
   phoneNumber,
+  isVerificationInProgress,
+  isResendingOTP,
 }: IOTPVerificationProps): JSX.Element {
   const [otp, setOTP] = useState('');
-  const [resendCounter, setResendCounter] = useState<number>(
+  const [resendTimeCounter, setResendTimeCounter] = useState<number>(
     OTP_RESEND_TIMEOUT,
   );
 
   useEffect(() => {
     let timerId: NodeJS.Timeout;
 
-    if (resendCounter > 0) {
+    if (resendTimeCounter > 0) {
       timerId = setTimeout(
-        () => setResendCounter((counter) => counter - 1),
+        () => setResendTimeCounter((counter) => counter - 1),
         1000,
       );
     }
 
-    return () => clearTimeout(timerId);
-  }, [resendCounter]);
+    return () => {
+      if (timerId !== undefined) clearTimeout(timerId);
+    };
+  }, [resendTimeCounter]);
 
   function handleSubmit() {
     onSubmit(otp);
@@ -45,7 +51,7 @@ function OTPVerification({
     const response = await onResendPress();
 
     if (response) {
-      setResendCounter(OTP_RESEND_TIMEOUT);
+      setResendTimeCounter(OTP_RESEND_TIMEOUT);
     }
   }
 
@@ -56,13 +62,20 @@ function OTPVerification({
       <Button
         mode="text"
         onPress={handleResendPress}
-        disabled={resendCounter > 0}
+        disabled={resendTimeCounter > 0}
+        loading={isResendingOTP}
       >
         <Text>
-          {resendCounter > 0 ? `Resend in ${resendCounter}` : 'Resend OTP'}
+          {resendTimeCounter > 0
+            ? `Resend in ${resendTimeCounter}`
+            : 'Resend OTP'}
         </Text>
       </Button>
-      <Button mode="contained" onPress={handleSubmit}>
+      <Button
+        mode="contained"
+        loading={isVerificationInProgress}
+        onPress={handleSubmit}
+      >
         <Text>Verify</Text>
       </Button>
     </View>

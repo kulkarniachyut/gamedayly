@@ -12,13 +12,13 @@ export interface IOTPVerificationScreenProps {
   navigation: StackNavigationProp<SignedOutStackParamList, 'OTPVerification'>;
 }
 
-function OTPVerificationScreen({
+const OTPVerificationScreen: React.FC<IOTPVerificationScreenProps> = ({
   route,
-}: IOTPVerificationScreenProps): JSX.Element {
+}) => {
   const [isVerificationInProgress, setIsVerificationInProgress] = useState(
     false,
   );
-  const [otpResent, setOTPResent] = useState(false);
+  const [isResendingOTP, setIsResendingOTP] = useState(false);
   const auth = useAuth();
   const setSnackbarConfig = React.useContext(SnackbarContext);
 
@@ -31,20 +31,24 @@ function OTPVerificationScreen({
     if (response && response?.isFailure()) {
       setIsVerificationInProgress(false);
       setSnackbarConfig?.({ visible: true, message: response.error().message });
+    } else {
+      // Not setting "isVerificationInProgress" to false in "else case" as
+      // currently the component will unmount on setting of auth data
     }
-
-    // Not setting "isVerificationInProgress" to false in "else case" as
-    // currently the component will unmount on setting of auth data
   }
 
   async function handleResendPress() {
-    if (isVerificationInProgress || !route.params.phoneNumber || otpResent) {
+    if (
+      !route.params.phoneNumber ||
+      isVerificationInProgress ||
+      isResendingOTP
+    ) {
       return false;
     }
 
-    setOTPResent(true);
+    setIsResendingOTP(true);
     const response = await auth?.sendOTP(route.params.phoneNumber);
-    setOTPResent(true);
+    setIsResendingOTP(false);
 
     if (response && response.isSuccess()) {
       setSnackbarConfig?.({ visible: true, message: 'OTP sent successfully' });
@@ -63,8 +67,10 @@ function OTPVerificationScreen({
       onSubmit={handleVerfication}
       onResendPress={handleResendPress}
       phoneNumber={route.params.phoneNumber}
+      isVerificationInProgress={isVerificationInProgress}
+      isResendingOTP={isResendingOTP}
     />
   );
-}
+};
 
 export default OTPVerificationScreen;
