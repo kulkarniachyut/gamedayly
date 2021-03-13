@@ -1,21 +1,39 @@
-import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { StatusBar } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-export default function App(): JSX.Element | null {
+import { AuthProvider } from './src/Auth';
+import SnackbarContext from './src/contexts/SnackbarContext';
+import useSnackbar from './src/hooks/useSnackbar';
+import Navigation from './src/navigation';
+import SplashScreen from './src/screens/SplashScreen';
+
+export default function App(): JSX.Element {
+  const [isLoading, setIsLoading] = useState(true);
+  const [snackbar, setSnackbarConfig] = useSnackbar();
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <StatusBar animated showHideTransition="slide" />
+      <SnackbarContext.Provider value={setSnackbarConfig}>
+        <AuthProvider>
+          {(auth) =>
+            isLoading ? (
+              <SplashScreen
+                onTokenRestoreComplete={() =>
+                  setIsLoading((loading) => !loading)
+                }
+              />
+            ) : (
+              <Navigation
+                isSignedIn={auth.user !== null}
+                isProfileComplete={auth.user?.isProfileComplete || false}
+              />
+            )
+          }
+        </AuthProvider>
+      </SnackbarContext.Provider>
+      {snackbar}
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
